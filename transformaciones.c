@@ -307,3 +307,88 @@ void blur_bn(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, lo
     free(temp);
     free(output);
 }
+
+void border_dx(char* nombre_archivo_salida, unsigned char* pixeles, long ancho, long alto, unsigned char* encabezado){
+    FILE *outputImage = fopen(nombre_archivo_salida, "wb");
+    if (outputImage == NULL) return;
+
+    for(int i = 0; i < 54; i++) {
+        fputc(encabezado[i], outputImage);
+    }
+
+    const int Gx[3][3] = {
+        {-1, 0, 1},
+        {-2, 0, 2},
+        {-1, 0, 1}
+    };
+
+    for (int y = 0; y < alto; y++) {
+        for (int x = 0; x < ancho; x++) {
+            if (x == 0 || x == ancho - 1 || y == 0 || y == alto - 1) {
+                fputc(0, outputImage);
+                fputc(0, outputImage);
+                fputc(0, outputImage);
+                continue;
+            }
+
+            int suma = 0;
+            for (int ky = -1; ky <= 1; ky++) {
+                for (int kx = -1; kx <= 1; kx++) {
+                    long idx = ((y + ky) * ancho + (x + kx)) * 3;
+                    int gris = (int)(0.07 * pixeles[idx] + 0.72 * pixeles[idx + 1] + 0.21 * pixeles[idx + 2]);
+                    suma += gris * Gx[ky + 1][kx + 1];
+                }
+            }
+
+            int mag = abs(suma);
+            unsigned char valor = (mag > 255) ? 255 : (unsigned char)mag;
+            fputc(valor, outputImage);
+            fputc(valor, outputImage);
+            fputc(valor, outputImage);
+        }
+    }
+    fclose(outputImage);
+}
+
+
+void border_dy(char* nombre_archivo_salida, unsigned char* pixeles, long ancho, long alto, unsigned char* encabezado){
+    FILE *outputImage = fopen(nombre_archivo_salida, "wb");
+    if (outputImage == NULL) return;
+
+    for(int i = 0; i < 54; i++) {
+        fputc(encabezado[i], outputImage);
+    }
+
+    const int Gy[3][3] = {
+        {-1, -2, -1},
+        { 0,  0,  0},
+        { 1,  2,  1}
+    };
+
+    for (int y = 0; y < alto; y++) {
+        for (int x = 0; x < ancho; x++) {
+            if (x == 0 || x == ancho - 1 || y == 0 || y == alto - 1) {
+                fputc(0, outputImage);
+                fputc(0, outputImage);
+                fputc(0, outputImage);
+                continue;
+            }
+
+            int suma = 0;
+            for (int ky = -1; ky <= 1; ky++) {
+                for (int kx = -1; kx <= 1; kx++) {
+                    long idx = ((y + ky) * ancho + (x + kx)) * 3;
+                    int gris = (int)(0.07 * pixeles[idx] + 0.72 * pixeles[idx + 1] + 0.21 * pixeles[idx + 2]);
+                    suma += gris * Gy[ky + 1][kx + 1];
+                }
+            }
+
+            int mag = abs(suma);
+            unsigned char valor = (mag > 255) ? 255 : (unsigned char)mag;
+            fputc(valor, outputImage);
+            fputc(valor, outputImage);
+            fputc(valor, outputImage);
+        }
+    }
+    fclose(outputImage);
+}
