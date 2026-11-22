@@ -3,6 +3,11 @@
 #include <string.h>
 #include "transformaciones.h"
 
+/**
+ * Lectura de imagen.
+ * Lee una imagen BMP.
+ * Obtiene sus dimensiones y almacena los píxeles en memoria.
+ */
 unsigned char* leer_imagen(char* name_file, long* ancho, long* alto, unsigned char* encabezado){
     FILE *archivo = fopen(name_file, "rb");
     if (archivo == NULL){
@@ -35,6 +40,12 @@ unsigned char* leer_imagen(char* name_file, long* ancho, long* alto, unsigned ch
     return pixeles; 
 }
 
+/**
+ * Refleción horizontal. 
+ * Invierte la imagen de izquierda a derecha utilizando el eje vertical. 
+ * Escala a color. 
+ * Complejidad: O(N)
+ */
 void inv_hor_color(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, long alto, unsigned char* encabezado) {
     FILE *outputImage = fopen(nombre_archivo_salida, "wb");
     if (outputImage == NULL) return;
@@ -60,6 +71,12 @@ void inv_hor_color(char* nombre_archivo_salida, unsigned char *pixeles, long anc
     fclose(outputImage);
 }
 
+/**
+ * Reflexión horizontal. 
+ * Invierte la imagen de izquierda a derecha utilizando el eje vertical. 
+ * Escala de grises. 
+ * Complejidad: O(N)
+ */
 void inv_hor_bn(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, long alto, unsigned char* encabezado){
     FILE *outputImage = fopen(nombre_archivo_salida, "wb");
     if (outputImage == NULL) return;
@@ -91,6 +108,12 @@ void inv_hor_bn(char* nombre_archivo_salida, unsigned char *pixeles, long ancho,
     fclose(outputImage);
 }
 
+/**
+ * Reflexión vertical. 
+ * Invierte la imagen de arriba hacia abajo utilizando el eje horizontal. 
+ * Escala a color. 
+ * Complejidad: O(N)
+ */
 void inv_ver_color(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, long alto, unsigned char* encabezado) {
     FILE *outputImage = fopen(nombre_archivo_salida, "wb");
     if (outputImage == NULL) return;
@@ -116,6 +139,12 @@ void inv_ver_color(char* nombre_archivo_salida, unsigned char *pixeles, long anc
     fclose(outputImage);
 }
 
+/**
+ * Reflexión vertical. 
+ * Invierte la imagen de arriba hacia abajo utilizando el eje horizontal. 
+ * Escala de grises. 
+ * Complejidad: O(N)
+ */
 void inv_ver_bn(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, long alto, unsigned char* encabezado) {
     FILE *outputImage = fopen(nombre_archivo_salida, "wb");
     if (outputImage == NULL) return;
@@ -147,6 +176,12 @@ void inv_ver_bn(char* nombre_archivo_salida, unsigned char *pixeles, long ancho,
     fclose(outputImage);
 }
 
+/**
+ * Desenfoque
+ * Desenfoca la imágen utilizando un kernel determinado. 
+ * Escala a color. 
+ * Complejidad: O(N * k)
+ */
 void blur_color(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, long alto, unsigned char* encabezado, int kernel_size) {
     long total_bytes = ancho * alto * 3;
 
@@ -225,6 +260,12 @@ void blur_color(char* nombre_archivo_salida, unsigned char *pixeles, long ancho,
     free(output);
 }
 
+/**
+ * Desenfoque
+ * Desenfoca la imágen utilizando un kernel determinado. 
+ * Escala de grises. 
+ * Complejidad: O(N * k)
+ */
 void blur_bn(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, long alto, unsigned char* encabezado, int kernel_size) {
     long total_bytes = ancho * alto * 3;
 
@@ -308,6 +349,12 @@ void blur_bn(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, lo
     free(output);
 }
 
+/**
+ * Detección de bordes en X.
+ * Detecta los bordes verticales de la imagen utilizando el operador Sobel.
+ * Escala de grises.
+ * Complejidad: O(N)
+ */
 void border_dx(char* nombre_archivo_salida, unsigned char* pixeles, long ancho, long alto, unsigned char* encabezado){
     FILE *outputImage = fopen(nombre_archivo_salida, "wb");
     if (outputImage == NULL) return;
@@ -350,7 +397,12 @@ void border_dx(char* nombre_archivo_salida, unsigned char* pixeles, long ancho, 
     fclose(outputImage);
 }
 
-
+/**
+ * Detección de bordes en Y.
+ * Detecta los bordes horizontales de la imagen utilizando el operador Sobel.
+ * Escala de grises.
+ * Complejidad: O(N)
+ */
 void border_dy(char* nombre_archivo_salida, unsigned char* pixeles, long ancho, long alto, unsigned char* encabezado){
     FILE *outputImage = fopen(nombre_archivo_salida, "wb");
     if (outputImage == NULL) return;
