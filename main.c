@@ -1,3 +1,14 @@
+/*
+ * Descripción: Procesa 10 imágenes BMP en paralelo utilizando OpenMP
+ * con 1, 2, 4, 6, 8, 10 (cambiando) hilos. Aplica transformaciones de reflexión horizontal y vertical,
+ * desenfoque y detección de bordes, tanto a color como en escala de grises.
+ * Guarda las imágenes resultantes y mide el tiempo total de ejecución.
+ * Autor: [Santiago Alejandro Muradás Ramírez, A01739610]
+ *        [Adolfo Rodríguez Rodríguez, A01739189]
+ *        [Juliana López Carbonell, A01739515]
+ * Fecha: [22/10/2026]
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
@@ -52,5 +63,4 @@ int main() {
     double fin = omp_get_wtime();
     printf("Todas las imágenes terminaron en %.4f segundos.\n", fin - inicio);
     return 0;
-}
 }
