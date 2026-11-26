@@ -4,10 +4,26 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
+import platform
 
-# Cargar librería en C
-ruta_lib = os.path.abspath("libtransformaciones.dylib")
+# Detectar el sistema operativo y elegir la extensión de librería correcta
+sistema = platform.system()
+if sistema == "Windows":
+    nombre_lib = "transformaciones.dll"
+elif sistema == "Darwin":  # macOS
+    nombre_lib = "libtransformaciones.dylib"
+else:  # Linux
+    nombre_lib = "libtransformaciones.so"
+
+ruta_lib = os.path.abspath(nombre_lib)
+
+# En Python 3.8+ en Windows, es necesario registrar el directorio para cargar dependencias (como libgomp)
+if sistema == "Windows":
+    os.add_dll_directory(os.path.dirname(ruta_lib))
+
 lib = ctypes.CDLL(ruta_lib)
+# Cargar librería en C
+
 
 lib.procesar_lote.argtypes = [
     ctypes.POINTER(ctypes.c_char_p),
