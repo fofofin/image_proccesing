@@ -5,25 +5,36 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import platform
+import shutil
 
-# Detectar el sistema operativo y elegir la extensión de librería correcta
+
+# Detectar el sistema operativo y cargar la biblioteca de C correspondiente.
 sistema = platform.system()
+
 if sistema == "Windows":
     nombre_lib = "transformaciones.dll"
-elif sistema == "Darwin":  # macOS
+elif sistema == "Darwin":
     nombre_lib = "libtransformaciones.dylib"
-else:  # Linux
+else:
     nombre_lib = "libtransformaciones.so"
 
 ruta_lib = os.path.abspath(nombre_lib)
 
-# En Python 3.8+ en Windows, es necesario registrar el directorio para cargar dependencias (como libgomp)
+directorios_dll = []
+
 if sistema == "Windows":
-    os.add_dll_directory(os.path.dirname(ruta_lib))
+    directorios_dll.append(
+        os.add_dll_directory(os.path.dirname(ruta_lib))
+    )
+
+    ruta_gcc = shutil.which("gcc")
+
+    if ruta_gcc:
+        directorios_dll.append(
+            os.add_dll_directory(os.path.dirname(ruta_gcc))
+        )
 
 lib = ctypes.CDLL(ruta_lib)
-# Cargar librería en C
-
 
 lib.procesar_lote.argtypes = [
     ctypes.POINTER(ctypes.c_char_p),
@@ -33,10 +44,16 @@ lib.procesar_lote.argtypes = [
     ctypes.c_int,
     ctypes.c_int,
 ]
+
 lib.procesar_lote.restype = None
 
 
 class ProcesadorLoteApp:
+
+    # Inicialización de la interfaz gráfica.
+    # Configura la ventana principal, los controles de selección,
+    # las transformaciones, los parámetros de procesamiento
+    # y el panel de visualización de resultados.
     def __init__(self, root):
         self.root = root
         self.root.title("Procesador Paralelo BMP (C + OpenMP)")
@@ -46,7 +63,6 @@ class ProcesadorLoteApp:
         self.carpeta_salida = os.path.abspath("salidas_bmp")
         os.makedirs(self.carpeta_salida, exist_ok=True)
 
-        # --- Panel Izquierdo: Controles y Checkboxes ---
         panel_izq = tk.Frame(root, width=320, padx=15, pady=15, relief=tk.RIDGE, bd=1)
         panel_izq.pack(side=tk.LEFT, fill=tk.Y)
 
@@ -64,7 +80,6 @@ class ProcesadorLoteApp:
 
         tk.Label(panel_izq, text="2. Transformaciones a aplicar:", font=("Arial", 11, "bold")).pack(anchor="w", pady=(10, 5))
 
-        # Checkboxes con su valor de bit correspondiente
         self.filtros_vars = [
             ("Inversión Horizontal (Color)", 1, tk.BooleanVar(value=True)),
             ("Inversión Horizontal (B/N)", 2, tk.BooleanVar(value=False)),
@@ -79,7 +94,6 @@ class ProcesadorLoteApp:
         for texto, _, var in self.filtros_vars:
             tk.Checkbutton(panel_izq, text=texto, variable=var).pack(anchor="w")
 
-        # Parámetros de paralelismo y kernel
         frame_params = tk.Frame(panel_izq, pady=12)
         frame_params.pack(fill=tk.X)
 
@@ -108,7 +122,6 @@ class ProcesadorLoteApp:
         self.lbl_tiempo = tk.Label(panel_izq, text="Tiempo: --.-- s", font=("Arial", 11, "bold"), fg="#0f766e")
         self.lbl_tiempo.pack(pady=5)
 
-        # --- Panel Derecho: Lista de resultados y Vista Previa ---
         panel_der = tk.Frame(root, padx=15, pady=15)
         panel_der.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -121,10 +134,16 @@ class ProcesadorLoteApp:
         self.panel_preview = tk.Label(panel_der, text="Vista previa del resultado", relief=tk.GROOVE)
         self.panel_preview.pack(fill=tk.BOTH, expand=True, pady=10)
 
+
+    # Carga de imágenes.
+    # Permite seleccionar hasta 10 imágenes BMP.
+    # Almacena sus rutas y actualiza el contador de imágenes.
     def cargar_imagenes(self):
         rutas = filedialog.askopenfilenames(filetypes=[("Imágenes BMP", "*.bmp")])
+
         if not rutas:
             return
+
         if len(rutas) > 10:
             messagebox.showwarning("Límite excedido", "Selecciona máximo 10 imágenes. Se tomarán las primeras 10.")
             rutas = rutas[:10]
@@ -132,13 +151,19 @@ class ProcesadorLoteApp:
         self.rutas_entrada = list(rutas)
         self.lbl_contador.config(text=f"{len(self.rutas_entrada)} imagen(es) lista(s)")
 
+
+    # Procesamiento paralelo del lote.
+    # Obtiene las transformaciones y los parámetros seleccionados.
+    # Utiliza una máscara de bits para identificar las operaciones.
+    # Ejecuta la función de C mediante OpenMP, mide el tiempo
+    # de ejecución y actualiza la lista de imágenes generadas.
     def ejecutar_lote(self):
         if not self.rutas_entrada:
             messagebox.showwarning("Aviso", "Primero selecciona entre 1 y 10 imágenes BMP.")
             return
 
-        # Calcular máscara de bits de los checkboxes marcados
         mascara = 0
+
         for _, bit, var in self.filtros_vars:
             if var.get():
                 mascara |= bit
@@ -147,7 +172,6 @@ class ProcesadorLoteApp:
             messagebox.showwarning("Aviso", "Marca al menos una transformación.")
             return
 
-        # Limpiar salidas anteriores
         for f in os.listdir(self.carpeta_salida):
             os.remove(os.path.join(self.carpeta_salida, f))
 
@@ -157,6 +181,7 @@ class ProcesadorLoteApp:
         kernel = int(self.spin_kernel.get())
 
         inicio = time.perf_counter()
+
         lib.procesar_lote(
             arr_rutas,
             self.carpeta_salida.encode("utf-8"),
@@ -165,13 +190,14 @@ class ProcesadorLoteApp:
             kernel,
             hilos,
         )
+
         fin = time.perf_counter()
 
         self.lbl_tiempo.config(text=f"Tiempo ({hilos} hilos): {fin - inicio:.4f} s")
 
-        # Actualizar lista de archivos creados
         self.lista_resultados.delete(0, tk.END)
         archivos = sorted(os.listdir(self.carpeta_salida))
+
         for arch in archivos:
             self.lista_resultados.insert(tk.END, arch)
 
@@ -179,20 +205,33 @@ class ProcesadorLoteApp:
             self.lista_resultados.selection_set(0)
             self.mostrar_imagen(os.path.join(self.carpeta_salida, archivos[0]))
 
+
+    # Selección de resultados.
+    # Obtiene la ruta de la imagen seleccionada por el usuario
+    # y llama a la función encargada de mostrarla.
     def previsualizar_seleccion(self, event):
         seleccion = self.lista_resultados.curselection()
+
         if seleccion:
             nombre = self.lista_resultados.get(seleccion[0])
             self.mostrar_imagen(os.path.join(self.carpeta_salida, nombre))
 
+
+    # Visualización de imágenes.
+    # Abre la imagen procesada y ajusta sus dimensiones.
+    # Convierte la imagen a un formato compatible con Tkinter
+    # y la muestra en el panel de vista previa.
     def mostrar_imagen(self, ruta):
         img = Image.open(ruta)
         img.thumbnail((620, 400))
         foto = ImageTk.PhotoImage(img)
+
         self.panel_preview.config(image=foto, text="")
         self.panel_preview.image = foto
 
 
+# Programa principal.
+# Inicializa y mantiene activa la interfaz gráfica.
 if __name__ == "__main__":
     root = tk.Tk()
     app = ProcesadorLoteApp(root)
