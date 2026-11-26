@@ -25,4 +25,6 @@ void border_dx(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, 
 
 void border_dy(char* nombre_archivo_salida, unsigned char *pixeles, long ancho, long alto, unsigned char* encabezado);
 
+void procesar_lote(const char** rutas_entrada, const char* carpeta_salida, int num_imagenes, int mascara_filtros, int kernel, int hilos);
+
 #endif
