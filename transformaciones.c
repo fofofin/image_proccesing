@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "transformaciones.h"
-
+#include <omp.h>
 /**
  * Lectura de imagen.
  * Lee una imagen BMP.
@@ -443,4 +443,51 @@ void border_dy(char* nombre_archivo_salida, unsigned char* pixeles, long ancho, 
         }
     }
     fclose(outputImage);
+}
+
+void procesar_lote(const char** rutas_entrada, const char* carpeta_salida, int num_imagenes, int mascara_filtros, int kernel, int hilos) {
+    #pragma omp parallel for num_threads(hilos) schedule(dynamic, 1)
+    for (int i = 0; i < num_imagenes; i++) {
+        long ancho, alto;
+        unsigned char encabezado[54];
+        char salida[512];
+
+        unsigned char* pixeles = leer_imagen((char*)rutas_entrada[i], &ancho, &alto, encabezado);
+        if (pixeles == NULL) continue;
+
+        if (mascara_filtros & 1) {
+            sprintf(salida, "%s/img%d_hor_color.bmp", carpeta_salida, i + 1);
+            inv_hor_color(salida, pixeles, ancho, alto, encabezado);
+        }
+        if (mascara_filtros & 2) {
+            sprintf(salida, "%s/img%d_hor_bn.bmp", carpeta_salida, i + 1);
+            inv_hor_bn(salida, pixeles, ancho, alto, encabezado);
+        }
+        if (mascara_filtros & 4) {
+            sprintf(salida, "%s/img%d_ver_color.bmp", carpeta_salida, i + 1);
+            inv_ver_color(salida, pixeles, ancho, alto, encabezado);
+        }
+        if (mascara_filtros & 8) {
+            sprintf(salida, "%s/img%d_ver_bn.bmp", carpeta_salida, i + 1);
+            inv_ver_bn(salida, pixeles, ancho, alto, encabezado);
+        }
+        if (mascara_filtros & 16) {
+            sprintf(salida, "%s/img%d_blur_color.bmp", carpeta_salida, i + 1);
+            blur_color(salida, pixeles, ancho, alto, encabezado, kernel);
+        }
+        if (mascara_filtros & 32) {
+            sprintf(salida, "%s/img%d_blur_bn.bmp", carpeta_salida, i + 1);
+            blur_bn(salida, pixeles, ancho, alto, encabezado, kernel);
+        }
+        if (mascara_filtros & 64) {
+            sprintf(salida, "%s/img%d_border_dx.bmp", carpeta_salida, i + 1);
+            border_dx(salida, pixeles, ancho, alto, encabezado);
+        }
+        if (mascara_filtros & 128) {
+            sprintf(salida, "%s/img%d_border_dy.bmp", carpeta_salida, i + 1);
+            border_dy(salida, pixeles, ancho, alto, encabezado);
+        }
+
+        free(pixeles);
+    }
 }
